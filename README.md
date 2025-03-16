@@ -34,12 +34,12 @@ An interactive command-line tool that automates and simplifies various pentestin
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/psatool-420.git
+git clone https://github.com/yourusername/Psatool.git
 ```
 
 2. Navigate to the directory:
 ```bash
-cd psatool-420
+cd Psatool
 ```
 
 3. Make the script executable:
