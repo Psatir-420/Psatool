@@ -4,7 +4,7 @@
 # Function to display the banner with figlet
 show_banner() {
     clear
-    figlet -f -c slant "Psatool-420" | lolcat
+    figlet -f  slant  "Psatool-420" | lolcat
     echo -e "\n\033[1;34mVer : 1.0.2\033[0m"
     echo -e "\n\033[1;34mInteractive Pentesting Automation\033[0m"
     
@@ -25,7 +25,7 @@ show_menu() {
     echo -e "\033[1;36m6)\033[0m \033[1;32mRun SQLMap\033[0m"
     echo -e "\033[1;36m7)\033[0m \033[1;32mRun Nikto\033[0m"
     echo -e "\033[1;36m8)\033[0m \033[1;32mOSINT Tools\033[0m"
-    echo -e "\033[1;36m9)\033[0m \033[1;32mOpenVPN Manager\033[0m"
+    echo -e "\033[1;36m9)\033[0m \033[1;32mRun Bettercap\033[0m"
     echo -e "\033[1;36m10)\033[0m \033[1;32mOpenVPN Manager\033[0m"
     echo -e "\033[1;36m69)\033[0m \033[1;31mExit\033[0m"
     echo -e "\033[1;33m=====================================\033[0m"
@@ -36,6 +36,8 @@ show_menu() {
 # Function to run Nmap scan with enhanced options
 run_nmap() {
     # Ask user for the target IP or domain
+    clear 
+    figlet -f  slant  "Nmap" | lolcat
     echo -e "\n\033[1;34mEnter target IP or domain:\033[0m "
     read target
 
@@ -129,6 +131,8 @@ run_nmap() {
 # Function to run Gobuster scan
 run_gobuster() {
     # Ask for target URL
+    clear
+    figlet -f  slant  "Gobuster" | lolcat
     echo -e "\n\033[1;34mEnter target URL (e.g., http://example.com):\033[0m "
     read target
 
@@ -226,6 +230,8 @@ read
 
 # Function to run WPScan
 run_wpscan() {
+    clear
+    figlet -f  slant  "WPScan" | lolcat
     echo -e "\n\033[1;34mEnter target URL (WordPress site):\033[0m "
     read target
 
@@ -305,7 +311,9 @@ read
 
 # Function to run John the Ripper
 run_john() {
-    echo -e "\n\033[1;34m=== John the Ripper Password Cracking ===\033[0m"
+    clear
+    figlet -f  slant  "John" | lolcat
+    echo -e "\n\033[1;34m=================================================\033[0m"
     echo -e "\033[1;34mSelect operation:\033[0m"
     echo -e "\033[1;36m1)\033[0m \033[1;32mCrack Linux shadow file\033[0m"
     echo -e "\033[1;36m2)\033[0m \033[1;32mCrack Windows hash (NTLM)\033[0m"
@@ -530,7 +538,9 @@ run_john() {
 
 # Function to generate Netcat payloads
 run_netcat() {
-    echo -e "\n\033[1;34m=== Netcat Payload Generator ===\033[0m"
+clear
+figlet -f  slant  "NetCat" | lolcat
+    echo -e "\n\033[1;34m================================\033[0m"
     echo -e "\033[1;34mEnter listener IP address:\033[0m"
     read listener_ip
     
@@ -589,7 +599,9 @@ run_netcat() {
 
 # Function to run SQLMap for SQL injection testing
 run_sqlmap() {
-    echo -e "\n\033[1;34m=== SQLMap SQL Injection Scanner ===\033[0m"
+    clear 
+    figlet -f  slant  "SQL Map" | lolcat
+    echo -e "\n\033[1;34m=====================================\033[0m"
     echo -e "\033[1;34mEnter target URL (with parameter, e.g., http://example.com/page.php?id=1):\033[0m"
     read target_url
     
@@ -646,7 +658,9 @@ run_sqlmap() {
 
 # Function to run Nikto Web Scanner
 run_nikto() {
-    echo -e "\n\033[1;34m=== Nikto Web Vulnerability Scanner ===\033[0m"
+    clear
+    figlet -f  slant  "Nikto" | lolcat
+    echo -e "\n\033[1;34m===============================================\033[0m"
     echo -e "\033[1;34mEnter target URL (e.g., http://example.com):\033[0m"
     read target_url
     
@@ -768,6 +782,8 @@ run_nikto() {
 
 # Function to run OSINT tools
 run_osint() {
+    clear
+    figlet -f  slant  "OSINT" | lolcat
     echo -e "\n\033[1;34m=== OSINT Tools ===\033[0m"
     echo -e "\033[1;34mSelect OSINT tool:\033[0m"
     echo -e "\033[1;36m1)\033[0m \033[1;32mWhois Lookup\033[0m"
@@ -776,7 +792,7 @@ run_osint() {
     echo -e "\033[1;36m4)\033[0m \033[1;32mSubdomain Finder\033[0m"
     echo -e "\033[1;36m5)\033[0m \033[1;32mGoogle Dorks Generator\033[0m"
     echo -e "\033[1;36m6)\033[0m \033[1;32mMetadata Extractor\033[0m"
-    echo -e "\033[1;36m7)\033[0m \033[1;32mShodan Search\033[0m"
+    echo -e "\033[1;36m7)\033[0m \033[1;32mSherlock Usernames\033[0m"
     echo -e "\033[1;36m8)\033[0m \033[1;31mBack to Main Menu\033[0m"
     echo -n "Enter your choice: "
     read osint_choice
@@ -922,26 +938,25 @@ run_osint() {
             ;;
             
         7)
-            # Shodan Search
-            echo -e "\033[1;34m=== Shodan Search ===\033[0m"
-            echo -e "\033[1;33mNote: This requires the Shodan CLI to be installed and configured with an API key.\033[0m"
-            echo -e "\033[1;34mEnter search query (e.g., 'hostname:example.com' or 'apache country:US'):\033[0m"
-            read shodan_query
-            if [[ -z "$shodan_query" ]]; then
-                echo -e "\033[1;31mSearch query required!\033[0m"
-                return
-            fi
-            
-            # Check if shodan CLI is installed
-            if ! command -v shodan &> /dev/null; then
-                echo -e "\033[1;31mShodan CLI not found. Install it with 'pip install shodan' and initialize with 'shodan init YOUR_API_KEY'\033[0m"
-                return
-            fi
-            
-            echo -e "\033[1;33m[*] Running Shodan search...\033[0m"
-            shodan search --fields ip_str,port,org,hostnames,os "$shodan_query"
-            echo -e "\n\033[1;32m[*] Shodan search completed.\033[0m"
-            ;;
+            echo -e "\033[1;34m=== Sherlock Username Search ===\033[0m"
+echo -e "\033[1;33mNote: This requires Sherlock to be installed. You can install it from https://github.com/sherlock-project/sherlock\033[0m"
+echo -e "\033[1;34mEnter the username you want to search for (e.g., 'username'):\033[0m"
+read sherlock_username
+if [[ -z "$sherlock_username" ]]; then
+    echo -e "\033[1;31mUsername required!\033[0m"
+    return
+fi
+
+# Check if Sherlock is installed
+if ! command -v sherlock &> /dev/null; then
+    echo -e "\033[1;31mSherlock not found. Install it from https://github.com/sherlock-project/sherlock\033[0m"
+    return
+fi
+
+echo -e "\033[1;33m[*] Running Sherlock search for username '$sherlock_username'...\033[0m"
+sherlock "$sherlock_username"
+echo -e "\n\033[1;32m[*] Sherlock search completed.\033[0m"
+;;
             
         8)
             # Return to main menu
@@ -962,7 +977,9 @@ run_osint() {
 
 # Function to run Bettercap
 run_bettercap() {
-    echo -e "\n\033[1;34m=== Bettercap Network Tool ===\033[0m"
+    clear
+    figlet -f  slant  "Bettercap" | lolcat
+    echo -e "\n\033[1;34m=====================================\033[0m"
     echo -e "\033[1;34mSelect Bettercap operation:\033[0m"
     echo -e "\033[1;36m1)\033[0m \033[1;32mNetwork Reconnaissance (discover hosts)\033[0m"
     echo -e "\033[1;36m2)\033[0m \033[1;32mARP Spoofing\033[0m"
@@ -1309,8 +1326,9 @@ run_openvpn() {
     
     # Configuration file to store the OVPN file path
     CONFIG_FILE=~/.psatool/config/ovpn_config
-    
-    echo -e "\n\033[1;34m=== OpenVPN Connection Manager ===\033[0m"
+    clear
+    figlet -f  slant  "Open VPN" | lolcat
+    echo -e "\n\033[1;34m========================\033[0m"
     echo -e "\033[1;34mSelect operation:\033[0m"
     echo -e "\033[1;36m1)\033[0m \033[1;32mConnect to TryHackMe\033[0m"
     echo -e "\033[1;36m2)\033[0m \033[1;32mDisconnect from VPN\033[0m"
