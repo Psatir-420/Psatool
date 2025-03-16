@@ -4,12 +4,17 @@
 # Function to display the banner with figlet
 show_banner() {
     clear
-    figlet -f slant "Psatool-420" | lolcat
+    figlet -f -c slant "Psatool-420" | lolcat
+    echo -e "\n\033[1;34mVer : 1.0.2\033[0m"
     echo -e "\n\033[1;34mInteractive Pentesting Automation\033[0m"
+    
+    # Show VPN Status
+    check_vpn_status
+    
     echo -e "\033[1;33m=====================================\033[0m"
 }
 
-# Function to display the main menu
+# Modified function to display the main menu with VPN option
 show_menu() {
     echo -e "\033[1;32m[*] Choose an option:\033[0m"
     echo -e "\033[1;36m1)\033[0m \033[1;32mRun Nmap Scan\033[0m"
@@ -20,11 +25,13 @@ show_menu() {
     echo -e "\033[1;36m6)\033[0m \033[1;32mRun SQLMap\033[0m"
     echo -e "\033[1;36m7)\033[0m \033[1;32mRun Nikto\033[0m"
     echo -e "\033[1;36m8)\033[0m \033[1;32mOSINT Tools\033[0m"
-    echo -e "\033[1;36m9)\033[0m \033[1;32mRun Bettercap\033[0m"
-    echo -e "\033[1;36m10)\033[0m \033[1;31mExit\033[0m"
+    echo -e "\033[1;36m9)\033[0m \033[1;32mOpenVPN Manager\033[0m"
+    echo -e "\033[1;36m10)\033[0m \033[1;32mOpenVPN Manager\033[0m"
+    echo -e "\033[1;36m69)\033[0m \033[1;31mExit\033[0m"
     echo -e "\033[1;33m=====================================\033[0m"
     echo -n "Please choose an option: "
 }
+
 
 # Function to run Nmap scan with enhanced options
 run_nmap() {
@@ -1295,6 +1302,133 @@ EOF
     fi
 }
 
+# Function to manage OpenVPN connection
+run_openvpn() {
+    # Create config directory if it doesn't exist
+    mkdir -p ~/.psatool/config
+    
+    # Configuration file to store the OVPN file path
+    CONFIG_FILE=~/.psatool/config/ovpn_config
+    
+    echo -e "\n\033[1;34m=== OpenVPN Connection Manager ===\033[0m"
+    echo -e "\033[1;34mSelect operation:\033[0m"
+    echo -e "\033[1;36m1)\033[0m \033[1;32mConnect to TryHackMe\033[0m"
+    echo -e "\033[1;36m2)\033[0m \033[1;32mDisconnect from VPN\033[0m"
+    echo -e "\033[1;36m3)\033[0m \033[1;32mChange OVPN file\033[0m"
+    echo -e "\033[1;36m4)\033[0m \033[1;32mBack to main menu\033[0m"
+    echo -n "Enter your choice: "
+    read vpn_choice
+    
+    case $vpn_choice in
+        1)
+            # Check if OVPN file path is already saved
+            if [ -f "$CONFIG_FILE" ]; then
+                OVPN_FILE=$(cat "$CONFIG_FILE")
+                
+                # Verify that the file still exists
+                if [ ! -f "$OVPN_FILE" ]; then
+                    echo -e "\033[1;31mSaved OVPN file not found. Please provide a new path.\033[0m"
+                    echo -e "\033[1;34mEnter the path to your TryHackMe OVPN file:\033[0m"
+                    read OVPN_FILE
+                    echo "$OVPN_FILE" > "$CONFIG_FILE"
+                fi
+            else
+                # Ask for OVPN file path
+                echo -e "\033[1;34mEnter the path to your TryHackMe OVPN file:\033[0m"
+                read OVPN_FILE
+                echo "$OVPN_FILE" > "$CONFIG_FILE"
+            fi
+            
+            # Check if file exists
+            if [ ! -f "$OVPN_FILE" ]; then
+                echo -e "\033[1;31mOVPN file not found! Please check the path and try again.\033[0m"
+                echo -e "\033[1;33mPress Enter to continue...\033[0m"
+                read
+                return
+            fi
+            
+            # Check if already connected
+            if pgrep -f "openvpn --config" > /dev/null; then
+                echo -e "\033[1;33mVPN connection is already active. Disconnect first if you want to reconnect.\033[0m"
+                echo -e "\033[1;33mPress Enter to continue...\033[0m"
+                read
+                return
+            fi
+            
+            # Open a new terminal window with OpenVPN
+            echo -e "\033[1;33m[*] Launching OpenVPN in a new terminal window...\033[0m"
+            
+            # Different terminal commands based on desktop environment
+            if command -v gnome-terminal &> /dev/null; then
+                gnome-terminal -- bash -c "sudo openvpn --config \"$OVPN_FILE\"; read -p 'Press Enter to close this window...'"
+            elif command -v xterm &> /dev/null; then
+                xterm -e "sudo openvpn --config \"$OVPN_FILE\"; read -p 'Press Enter to close this window...'" &
+            elif command -v konsole &> /dev/null; then
+                konsole --new-tab -e "sudo openvpn --config \"$OVPN_FILE\"; read -p 'Press Enter to close this window...'" &
+            elif command -v xfce4-terminal &> /dev/null; then
+                xfce4-terminal -e "sudo openvpn --config \"$OVPN_FILE\"; read -p 'Press Enter to close this window...'" &
+            else
+                echo -e "\033[1;31mNo supported terminal found. Starting OpenVPN in background.\033[0m"
+                sudo openvpn --config "$OVPN_FILE" --daemon
+            fi
+            
+            echo -e "\033[1;32m[*] OpenVPN connection initiated. Check the new terminal window for progress.\033[0m"
+            echo -e "\033[1;33mPress Enter to continue...\033[0m"
+            read
+            ;;
+            
+        2)
+            # Disconnect from VPN
+            if pgrep -f "openvpn --config" > /dev/null; then
+                echo -e "\033[1;33m[*] Disconnecting from VPN...\033[0m"
+                sudo killall openvpn
+                echo -e "\033[1;32m[*] VPN disconnected successfully.\033[0m"
+            else
+                echo -e "\033[1;31mNo active VPN connection found.\033[0m"
+            fi
+            echo -e "\033[1;33mPress Enter to continue...\033[0m"
+            read
+            ;;
+            
+        3)
+            # Change OVPN file
+            echo -e "\033[1;34mEnter the path to your new TryHackMe OVPN file:\033[0m"
+            read OVPN_FILE
+            
+            if [ -f "$OVPN_FILE" ]; then
+                echo "$OVPN_FILE" > "$CONFIG_FILE"
+                echo -e "\033[1;32m[*] OVPN file path updated successfully.\033[0m"
+            else
+                echo -e "\033[1;31mFile not found! Path not updated.\033[0m"
+            fi
+            echo -e "\033[1;33mPress Enter to continue...\033[0m"
+            read
+            ;;
+            
+        4)
+            # Return to main menu
+            return
+            ;;
+            
+        *)
+            echo -e "\033[1;31mInvalid choice!\033[0m"
+            echo -e "\033[1;33mPress Enter to continue...\033[0m"
+            read
+            ;;
+    esac
+}
+
+# Function to check VPN status
+check_vpn_status() {
+    if pgrep -f "openvpn --config" > /dev/null; then
+        # Get current public IP
+        PUBLIC_IP=$(curl -s ifconfig.me || echo "Unknown")
+        echo -e "\033[1;32m[VPN Connected | IP: $PUBLIC_IP]\033[0m"
+    else
+        echo -e "\033[1;31m[VPN Disconnected]\033[0m"
+    fi
+}
+
 
 
 # Main execution loop
@@ -1304,44 +1438,46 @@ main() {
         show_menu
         read choice
         
-case $choice in
-    1)
-        run_nmap
-        ;;
-    2)
-        run_gobuster
-        ;;
-    3)
-        run_wpscan
-        ;;
-    4)
-        run_john
-        ;;
-    5)
-        generate_netcat_payload
-        ;;
-    6)
-        run_sqlmap
-        ;;
-    7)
-        run_nikto
-        ;;
-    8)
-        run_osint
-        ;;
-    9)
-        run_bettercap
-        ;;
-        
-    10)
-        echo -e "\033[1;32m[*] Thank you for using Psatool-420!\033[0m"
-        exit 0
-        ;;
-    *)
-        echo -e "\033[1;31mInvalid option. Please try again.\033[0m"
-        sleep 2
-        ;;
-esac
+        case $choice in
+            1)
+                run_nmap
+                ;;
+            2)
+                run_gobuster
+                ;;
+            3)
+                run_wpscan
+                ;;
+            4)
+                run_john
+                ;;
+            5)
+                run_netcat
+                ;;
+            6)
+                run_sqlmap
+                ;;
+            7)
+                run_nikto
+                ;;
+            8)
+                run_osint
+                ;;
+            9)
+                run_bettercap
+                ;;
+            10)
+                run_openvpn
+                ;;
+            69)
+                echo -e "\033[1;32m[*] Thank you for using Psatool-420!\033[0m"
+                exit 0
+                ;;
+            *)
+                echo -e "\033[1;31mInvalid option. Please try again.\033[0m"
+                sleep 2
+                ;;
+        esac
     done
 }
 
