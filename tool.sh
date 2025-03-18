@@ -35,98 +35,609 @@ show_menu() {
 
 # Function to run Nmap scan with enhanced options
 run_nmap() {
-    # Ask user for the target IP or domain
+    # Show a stylish header
     clear 
-    figlet -f  slant  "Nmap" | lolcat
-    echo -e "\n\033[1;34mEnter target IP or domain:\033[0m "
-    read target
-
-    if [[ -z "$target" ]]; then
-        echo -e "\033[1;31mYou must provide a target IP or domain!\033[0m"
-        return
-    fi
-
-    # Ask user for the type of Nmap scan (enhanced options)
-    echo -e "\033[1;34mSelect Nmap Scan Type:\033[0m"
-    echo -e "\033[1;36m1)\033[0m \033[1;32mBasic Scan (Ping Scan)\033[0m"
-    echo -e "\033[1;36m2)\033[0m \033[1;32mAggressive Scan (with version detection)\033[0m"
-    echo -e "\033[1;36m3)\033[0m \033[1;32mPort Scan (Scan for Open Ports)\033[0m"
-    echo -e "\033[1;36m4)\033[0m \033[1;32mVulnerability Scan\033[0m"
-    echo -e "\033[1;36m5)\033[0m \033[1;32mStealth SYN Scan\033[0m"
-    echo -e "\033[1;36m6)\033[0m \033[1;32mService and Version Detection\033[0m"
-    echo -e "\033[1;36m7)\033[0m \033[1;32mOS Detection\033[0m"
-    echo -e "\033[1;36m8)\033[0m \033[1;32mUDP Scan\033[0m"
-    echo -e "\033[1;36m9)\033[0m \033[1;32mComprehensive Scan (Slow but thorough)\033[0m"
-    echo -n "Enter your choice: "
-    read scan_choice
-
-    # Ask if the user wants to save the result or view it directly
-    echo -e "\033[1;34mWould you like to (S)ave or (V)iew the results? (S/V):\033[0m"
-    read save_or_view
-
-    # Run scan and display/save the results accordingly
-    case $scan_choice in
+    figlet -f slant "Nmap Scanner" | lolcat
+    echo -e "\n\033[1;34m=========================================\033[0m"
+    echo -e "\033[1;33m        Network Mapping Utility Suite      \033[0m"
+    echo -e "\033[1;34m=========================================\033[0m\n"
+    
+    # Main menu for Nmap operations
+    echo -e "\033[1;34mMAIN MENU:\033[0m"
+    echo -e "\033[1;36m1)\033[0m \033[1;32mRun Nmap Scan\033[0m"
+    echo -e "\033[1;36m2)\033[0m \033[1;32mView Previous Scan Results\033[0m"
+    echo -e "\033[1;36m3)\033[0m \033[1;32mSchedule Automated Scan\033[0m"
+    echo -e "\033[1;36m4)\033[0m \033[1;32mNetwork Range Scanner\033[0m"
+    echo -e "\033[1;36m5)\033[0m \033[1;32mHelp & Documentation\033[0m"
+    echo -e "\033[1;36m0)\033[0m \033[1;32mReturn to Main Menu\033[0m"
+    
+    echo -n -e "\033[1;34mEnter your choice: \033[0m"
+    read main_choice
+    
+    case $main_choice in
         1)
-            scan_cmd="nmap -sn $target"
+            perform_nmap_scan
             ;;
         2)
-            scan_cmd="nmap -A -T4 -v $target"
+            view_previous_results
             ;;
         3)
-            scan_cmd="nmap -p- $target"
+            schedule_scan
             ;;
         4)
-            scan_cmd="nmap -sV --script vuln $target"
+            network_range_scanner
             ;;
         5)
-            scan_cmd="nmap -sS -T2 $target"
+            show_help_documentation
             ;;
-        6)
-            scan_cmd="nmap -sV -sC $target"
-            ;;
-        7)
-            scan_cmd="nmap -O --osscan-guess $target"
-            ;;
-        8)
-            scan_cmd="nmap -sU --top-ports 100 $target"
-            ;;
-        9)
-            scan_cmd="nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script 'default or (discovery and safe)' $target"
+        0)
+            echo -e "\033[1;33mReturning to main menu...\033[0m"
+            return
             ;;
         *)
-            echo -e "\033[1;31mInvalid choice! Returning to the main menu.\033[0m"
+            echo -e "\033[1;31mInvalid choice! Please select a valid option.\033[0m"
+            sleep 2
+            run_nmap
+            ;;
+    esac
+}
+
+perform_nmap_scan() {
+    clear
+    figlet -f slant "Nmap Scan" | lolcat
+    echo -e "\n\033[1;34m=========================================\033[0m"
+    echo -e "\033[1;33m             Scan Configuration            \033[0m"
+    echo -e "\033[1;34m=========================================\033[0m\n"
+    
+    # Target selection
+    echo -e "\033[1;34mTARGET SELECTION:\033[0m"
+    echo -e "\033[1;36m1)\033[0m \033[1;32mSingle IP or Domain\033[0m"
+    echo -e "\033[1;36m2)\033[0m \033[1;32mIP Range (e.g., 192.168.1.1-20)\033[0m"
+    echo -e "\033[1;36m3)\033[0m \033[1;32mSubnet (e.g., 192.168.1.0/24)\033[0m"
+    echo -e "\033[1;36m4)\033[0m \033[1;32mLoad targets from file\033[0m"
+    echo -e "\033[1;36m0)\033[0m \033[1;32mBack to Main Menu\033[0m"
+    
+    echo -n -e "\033[1;34mEnter your choice: \033[0m"
+    read target_choice
+    
+    case $target_choice in
+        0)
+            run_nmap
+            return
+            ;;
+        1)
+            echo -e "\n\033[1;34mEnter target IP or domain:\033[0m "
+            read target
+            ;;
+        2)
+            echo -e "\n\033[1;34mEnter IP range (e.g., 192.168.1.1-20):\033[0m "
+            read target
+            ;;
+        3)
+            echo -e "\n\033[1;34mEnter subnet (e.g., 192.168.1.0/24):\033[0m "
+            read target
+            ;;
+        4)
+            echo -e "\n\033[1;34mEnter path to targets file:\033[0m "
+            read targets_file
+            if [[ ! -f "$targets_file" ]]; then
+                echo -e "\033[1;31mFile not found! Returning to Target Selection.\033[0m"
+                sleep 2
+                perform_nmap_scan
+                return
+            fi
+            target="-iL $targets_file"
+            ;;
+        *)
+            echo -e "\033[1;31mInvalid choice! Returning to Target Selection.\033[0m"
+            sleep 2
+            perform_nmap_scan
             return
             ;;
     esac
-
-    if [[ "$save_or_view" == "S" || "$save_or_view" == "s" ]]; then
-        echo -e "\033[1;34mEnter output filename (without extension):\033[0m "
-        read output_file
-        if [[ -z "$output_file" ]]; then
-            output_file="nmap_scan_$(date +%Y%m%d_%H%M%S)"
-        fi
-
-        # Create results directory if it doesn't exist
-        mkdir -p results
-
-        # Run scan and save to file
-        echo -e "\033[1;33m[*] Running Nmap scan and saving results...\033[0m"
-        $scan_cmd -oN results/$output_file.txt
-        echo -e "\033[1;32m[*] Scan completed. Results saved to 'results/$output_file.txt'\033[0m"
-        echo -e "\033[1;33mPress Enter to continue...\033[0m"
-        read
-    elif [[ "$save_or_view" == "V" || "$save_or_view" == "v" ]]; then
-        # Run scan and show results directly on terminal
-        echo -e "\033[1;33m[*] Running Nmap scan and displaying results...\033[0m"
-        $scan_cmd
-        echo -e "\n\033[1;32m[*] Scan completed.\033[0m"
-        echo -e "\033[1;33mPress Enter to continue...\033[0m"
-        read
+    
+    if [[ -z "$target" && $target_choice != 4 ]]; then
+        echo -e "\033[1;31mYou must provide a target! Returning to Target Selection.\033[0m"
+        sleep 2
+        perform_nmap_scan
+        return
+    fi
+    
+    # Scan Type Selection
+    clear
+    figlet -f slant "Scan Type" | lolcat
+    echo -e "\n\033[1;34m=========================================\033[0m"
+    echo -e "\033[1;33m             Select Scan Type              \033[0m"
+    echo -e "\033[1;34m=========================================\033[0m\n"
+    
+    echo -e "\033[1;34mBASIC SCANS:\033[0m"
+    echo -e "\033[1;36m1)\033[0m \033[1;32mPing Scan (Host Discovery)\033[0m - Discovers which hosts are online"
+    echo -e "\033[1;36m2)\033[0m \033[1;32mQuick Scan\033[0m - Fast scan of most common 100 ports"
+    echo -e "\033[1;36m3)\033[0m \033[1;32mRegular Scan\033[0m - Standard 1000 port scan"
+    echo -e "\033[1;36m4)\033[0m \033[1;32mIntensive Scan\033[0m - Detailed scan with version detection"
+    
+    echo -e "\n\033[1;34mADVANCED SCANS:\033[0m"
+    echo -e "\033[1;36m5)\033[0m \033[1;32mFull Port Scan\033[0m - Scan all 65535 ports (slow)"
+    echo -e "\033[1;36m6)\033[0m \033[1;32mStealth SYN Scan\033[0m - Less intrusive TCP SYN scan"
+    echo -e "\033[1;36m7)\033[0m \033[1;32mUDP Scan\033[0m - Scan for UDP services"
+    echo -e "\033[1;36m8)\033[0m \033[1;32mOS Detection\033[0m - Attempt to identify operating system"
+    
+    echo -e "\n\033[1;34mSPECIALIZED SCANS:\033[0m"
+    echo -e "\033[1;36m9)\033[0m \033[1;32mVulnerability Scan\033[0m - Check for known vulnerabilities"
+    echo -e "\033[1;36m10)\033[0m \033[1;32mService & Version Detection\033[0m - Identify services and versions"
+    echo -e "\033[1;36m11)\033[0m \033[1;32mFirewall/IDS Evasion Scan\033[0m - Attempt to bypass security measures"
+    echo -e "\033[1;36m12)\033[0m \033[1;32mComprehensive Scan\033[0m - Full-featured intensive scan (slow)"
+    
+    echo -e "\n\033[1;34mCUSTOM OPTIONS:\033[0m"
+    echo -e "\033[1;36m13)\033[0m \033[1;32mCustom Scan\033[0m - Build your own scan with specific Nmap options"
+    echo -e "\033[1;36m0)\033[0m \033[1;32mBack to Target Selection\033[0m"
+    
+    echo -n -e "\n\033[1;34mEnter your choice: \033[0m"
+    read scan_choice
+    
+    case $scan_choice in
+        0)
+            perform_nmap_scan
+            return
+            ;;
+        1)
+            scan_type="Host Discovery"
+            scan_cmd="nmap -sn"
+            ;;
+        2)
+            scan_type="Quick Scan"
+            scan_cmd="nmap -T4 -F"
+            ;;
+        3)
+            scan_type="Regular Scan"
+            scan_cmd="nmap"
+            ;;
+        4)
+            scan_type="Intensive Scan"
+            scan_cmd="nmap -T4 -A"
+            ;;
+        5)
+            scan_type="Full Port Scan"
+            scan_cmd="nmap -p-"
+            ;;
+        6)
+            scan_type="Stealth SYN Scan"
+            scan_cmd="nmap -sS -T2"
+            ;;
+        7)
+            scan_type="UDP Scan"
+            scan_cmd="nmap -sU --top-ports 100"
+            ;;
+        8)
+            scan_type="OS Detection"
+            scan_cmd="nmap -O --osscan-guess"
+            ;;
+        9)
+            scan_type="Vulnerability Scan"
+            scan_cmd="nmap -sV --script vuln"
+            ;;
+        10)
+            scan_type="Service & Version Detection"
+            scan_cmd="nmap -sV -sC"
+            ;;
+        11)
+            scan_type="Firewall/IDS Evasion Scan"
+            scan_cmd="nmap -f -t 0 -n -Pn --data-length 200"
+            ;;
+        12)
+            scan_type="Comprehensive Scan"
+            scan_cmd="nmap -sS -sU -T4 -A -v -PE -PP -PS80,443 -PA3389 -PU40125 -PY -g 53 --script 'default or (discovery and safe)'"
+            ;;
+        13)
+            echo -e "\n\033[1;34mEnter custom Nmap options:\033[0m "
+            read custom_options
+            scan_type="Custom Scan"
+            scan_cmd="nmap $custom_options"
+            ;;
+        *)
+            echo -e "\033[1;31mInvalid choice! Returning to Scan Type Selection.\033[0m"
+            sleep 2
+            # Re-call the function to show the menu again
+            perform_nmap_scan
+            return
+            ;;
+    esac
+    
+    # Advanced Options Menu
+    clear
+    figlet -f slant "Options" | lolcat
+    echo -e "\n\033[1;34m=========================================\033[0m"
+    echo -e "\033[1;33m             Advanced Options              \033[0m"
+    echo -e "\033[1;34m=========================================\033[0m\n"
+    
+    echo -e "\033[1;34mWould you like to add any advanced options?\033[0m"
+    echo -e "\033[1;36m1)\033[0m \033[1;32mNo, continue with current settings\033[0m"
+    echo -e "\033[1;36m2)\033[0m \033[1;32mSpecify timing template (0-5, slower to faster)\033[0m"
+    echo -e "\033[1;36m3)\033[0m \033[1;32mSpecify verbosity level\033[0m"
+    echo -e "\033[1;36m4)\033[0m \033[1;32mSpecify output format(s)\033[0m"
+    echo -e "\033[1;36m5)\033[0m \033[1;32mAdd script categories\033[0m"
+    echo -e "\033[1;36m0)\033[0m \033[1;32mBack to Scan Type Selection\033[0m"
+    
+    echo -n -e "\n\033[1;34mEnter your choice: \033[0m"
+    read advanced_choice
+    
+    case $advanced_choice in
+        0)
+            # Go back to scan type selection
+            perform_nmap_scan
+            return
+            ;;
+        1)
+            # Continue with current settings
+            ;;
+        2)
+            echo -e "\n\033[1;34mEnter timing template (0-5, slower to faster):\033[0m "
+            read timing
+            if [[ $timing =~ ^[0-5]$ ]]; then
+                scan_cmd="$scan_cmd -T$timing"
+            else
+                echo -e "\033[1;31mInvalid timing value! Using default.\033[0m"
+                sleep 2
+            fi
+            ;;
+        3)
+            echo -e "\n\033[1;34mEnter verbosity level (0-2):\033[0m "
+            read verbosity
+            if [[ $verbosity == "1" ]]; then
+                scan_cmd="$scan_cmd -v"
+            elif [[ $verbosity == "2" ]]; then
+                scan_cmd="$scan_cmd -vv"
+            fi
+            ;;
+        4)
+            echo -e "\n\033[1;34mSelect output format(s):\033[0m"
+            echo -e "\033[1;36m1)\033[0m \033[1;32mNormal (-oN)\033[0m"
+            echo -e "\033[1;36m2)\033[0m \033[1;32mXML (-oX)\033[0m"
+            echo -e "\033[1;36m3)\033[0m \033[1;32mGreppable (-oG)\033[0m"
+            echo -e "\033[1;36m4)\033[0m \033[1;32mAll formats (-oA)\033[0m"
+            echo -n -e "\033[1;34mEnter your choice: \033[0m"
+            read format_choice
+            
+            echo -e "\n\033[1;34mEnter output file name (without extension):\033[0m "
+            read output_file
+            
+            if [[ -z "$output_file" ]]; then
+                output_file="nmap_scan_$(date +%Y%m%d_%H%M%S)"
+            fi
+            
+            # Create results directory if it doesn't exist
+            mkdir -p results
+            
+            case $format_choice in
+                1)
+                    scan_cmd="$scan_cmd -oN results/$output_file.txt"
+                    output_files="results/$output_file.txt"
+                    ;;
+                2)
+                    scan_cmd="$scan_cmd -oX results/$output_file.xml"
+                    output_files="results/$output_file.xml"
+                    ;;
+                3)
+                    scan_cmd="$scan_cmd -oG results/$output_file.gnmap"
+                    output_files="results/$output_file.gnmap"
+                    ;;
+                4)
+                    scan_cmd="$scan_cmd -oA results/$output_file"
+                    output_files="results/$output_file.*"
+                    ;;
+                *)
+                    echo -e "\033[1;31mInvalid choice! Using normal output format.\033[0m"
+                    scan_cmd="$scan_cmd -oN results/$output_file.txt"
+                    output_files="results/$output_file.txt"
+                    sleep 2
+                    ;;
+            esac
+            ;;
+        5)
+            echo -e "\n\033[1;34mSelect script category to add:\033[0m"
+            echo -e "\033[1;36m1)\033[0m \033[1;32mDefault\033[0m"
+            echo -e "\033[1;36m2)\033[0m \033[1;32mSafe\033[0m"
+            echo -e "\033[1;36m3)\033[0m \033[1;32mDiscovery\033[0m"
+            echo -e "\033[1;36m4)\033[0m \033[1;32mVulnerability\033[0m"
+            echo -e "\033[1;36m5)\033[0m \033[1;32mExploit\033[0m"
+            echo -e "\033[1;36m6)\033[0m \033[1;32mAuth\033[0m"
+            echo -e "\033[1;36m7)\033[0m \033[1;32mBrute\033[0m"
+            echo -e "\033[1;36m8)\033[0m \033[1;32mCustom script selection\033[0m"
+            
+            echo -n -e "\033[1;34mEnter your choice: \033[0m"
+            read script_choice
+            
+            case $script_choice in
+                1)
+                    scan_cmd="$scan_cmd --script default"
+                    ;;
+                2)
+                    scan_cmd="$scan_cmd --script safe"
+                    ;;
+                3)
+                    scan_cmd="$scan_cmd --script discovery"
+                    ;;
+                4)
+                    scan_cmd="$scan_cmd --script vuln"
+                    ;;
+                5)
+                    scan_cmd="$scan_cmd --script exploit"
+                    ;;
+                6)
+                    scan_cmd="$scan_cmd --script auth"
+                    ;;
+                7)
+                    scan_cmd="$scan_cmd --script brute"
+                    ;;
+                8)
+                    echo -e "\n\033[1;34mEnter custom script selection (e.g., 'http-*,ssl-*):\033[0m "
+                    read custom_scripts
+                    scan_cmd="$scan_cmd --script '$custom_scripts'"
+                    ;;
+                *)
+                    echo -e "\033[1;31mInvalid choice! No scripts added.\033[0m"
+                    sleep 2
+                    ;;
+            esac
+            ;;
+        *)
+            echo -e "\033[1;31mInvalid choice! No advanced options added.\033[0m"
+            sleep 2
+            ;;
+    esac
+    
+    # Output options if not already specified
+    if [[ ! $scan_cmd =~ "-o" ]]; then
+        clear
+        figlet -f slant "Output" | lolcat
+        echo -e "\n\033[1;34m=========================================\033[0m"
+        echo -e "\033[1;33m              Output Options               \033[0m"
+        echo -e "\033[1;34m=========================================\033[0m\n"
+        
+        echo -e "\033[1;34mHow would you like to handle the scan results?\033[0m"
+        echo -e "\033[1;36m1)\033[0m \033[1;32mView results in terminal only\033[0m"
+        echo -e "\033[1;36m2)\033[0m \033[1;32mSave results to file\033[0m"
+        echo -e "\033[1;36m3)\033[0m \033[1;32mBoth view and save results\033[0m"
+        echo -e "\033[1;36m0)\033[0m \033[1;32mBack to Advanced Options\033[0m"
+        
+        echo -n -e "\n\033[1;34mEnter your choice: \033[0m"
+        read output_choice
+        
+        case $output_choice in
+            0)
+                # Go back to advanced options
+                perform_nmap_scan
+                return
+                ;;
+            1)
+                # View only, do nothing
+                ;;
+            2|3)
+                echo -e "\n\033[1;34mEnter output file name (without extension):\033[0m "
+                read output_file
+                
+                if [[ -z "$output_file" ]]; then
+                    output_file="nmap_scan_$(date +%Y%m%d_%H%M%S)"
+                fi
+                
+                # Create results directory if it doesn't exist
+                mkdir -p results
+                
+                scan_cmd="$scan_cmd -oN results/$output_file.txt"
+                output_files="results/$output_file.txt"
+                ;;
+            *)
+                echo -e "\033[1;31mInvalid choice! Using view only.\033[0m"
+                sleep 2
+                ;;
+        esac
+    fi
+    
+    # Execute the scan
+    clear
+    figlet -f slant "Scanning" | lolcat
+    echo -e "\n\033[1;34m=========================================\033[0m"
+    echo -e "\033[1;33m               Scan Details                \033[0m"
+    echo -e "\033[1;34m=========================================\033[0m\n"
+    
+    echo -e "\033[1;34mScan Type:\033[0m \033[1;32m$scan_type\033[0m"
+    echo -e "\033[1;34mTarget:\033[0m \033[1;32m$target\033[0m"
+    echo -e "\033[1;34mCommand:\033[0m \033[1;32m$scan_cmd $target\033[0m"
+    
+    if [[ -n "$output_files" ]]; then
+        echo -e "\033[1;34mOutput File(s):\033[0m \033[1;32m$output_files\033[0m"
+    fi
+    
+    echo -e "\n\033[1;33m[*] Starting Nmap scan at $(date)...\033[0m"
+    echo -e "\033[1;33m[*] This may take some time depending on the scan type and target...\033[0m\n"
+    
+    # Execute the scan
+    if [[ $output_choice == "3" ]]; then
+        # Both view and save
+        eval "$scan_cmd $target | tee >(cat)"
     else
-        echo -e "\033[1;31mInvalid choice. Returning to the main menu.\033[0m"
+        # Either view only or save only
+        eval "$scan_cmd $target"
+    fi
+    
+    scan_status=$?
+    
+    if [[ $scan_status -eq 0 ]]; then
+        echo -e "\n\033[1;32m[✓] Scan completed successfully at $(date).\033[0m"
+        
+        if [[ -n "$output_files" ]]; then
+            echo -e "\033[1;32m[✓] Results saved to $output_files\033[0m"
+        fi
+    else
+        echo -e "\n\033[1;31m[✗] Scan failed with error code $scan_status.\033[0m"
+    fi
+    
+    echo -e "\n\033[1;33mPress Enter to return to main menu...\033[0m"
+    read
+    run_nmap
+}
+
+view_previous_results() {
+    clear
+    figlet -f slant "Results" | lolcat
+    echo -e "\n\033[1;34m=========================================\033[0m"
+    echo -e "\033[1;33m            Previous Scan Results          \033[0m"
+    echo -e "\033[1;34m=========================================\033[0m\n"
+    
+    # Check if results directory exists
+    if [[ ! -d "results" ]]; then
+        echo -e "\033[1;31mNo results directory found. No previous scans available.\033[0m"
+        echo -e "\n\033[1;33mPress Enter to return to main menu...\033[0m"
+        read
+        run_nmap
+        return
+    fi
+    
+    # Count files in results directory
+    file_count=$(find results -type f | wc -l)
+    
+    if [[ $file_count -eq 0 ]]; then
+        echo -e "\033[1;31mNo scan results found in the results directory.\033[0m"
+        echo -e "\n\033[1;33mPress Enter to return to main menu...\033[0m"
+        read
+        run_nmap
+        return
+    fi
+    
+    # List available result files
+    echo -e "\033[1;34mAvailable scan results:\033[0m\n"
+    
+    # Create a numbered list of files
+    find results -type f | sort -r | nl -w2 -s') '
+    
+    echo -e "\n\033[1;34mOptions:\033[0m"
+    echo -e "\033[1;36m1-$file_count)\033[0m \033[1;32mView a specific file\033[0m"
+    echo -e "\033[1;36mD)\033[0m \033[1;32mDelete a result file\033[0m"
+    echo -e "\033[1;36mC)\033[0m \033[1;32mCompare two result files\033[0m"
+    echo -e "\033[1;36m0)\033[0m \033[1;32mReturn to main menu\033[0m"
+    
+    echo -n -e "\n\033[1;34mEnter your choice: \033[0m"
+    read file_choice
+    
+    if [[ $file_choice == "0" ]]; then
+        run_nmap
+        return
+    elif [[ $file_choice =~ ^[0-9]+$ && $file_choice -le $file_count ]]; then
+        # View the selected file
+        selected_file=$(find results -type f | sort -r | sed -n "${file_choice}p")
+        
+        clear
+        echo -e "\033[1;34m=========================================\033[0m"
+        echo -e "\033[1;33m              File Contents              \033[0m"
+        echo -e "\033[1;34m=========================================\033[0m\n"
+        
+        echo -e "\033[1;34mFile:\033[0m \033[1;32m$selected_file\033[0m\n"
+        
+        # Determine file type and use appropriate viewer
+        if [[ $selected_file == *.xml ]]; then
+            # For XML files, try to use xmllint if available
+            if command -v xmllint &> /dev/null; then
+                xmllint --format "$selected_file" | less
+            else
+                cat "$selected_file" | less
+            fi
+        else
+            # For text files, use less
+            less "$selected_file"
+        fi
+        
+        view_previous_results
+    elif [[ $file_choice == "D" || $file_choice == "d" ]]; then
+        # Delete a file
+        echo -e "\n\033[1;34mEnter the number of the file to delete:\033[0m "
+        read delete_num
+        
+        if [[ $delete_num =~ ^[0-9]+$ && $delete_num -le $file_count ]]; then
+            file_to_delete=$(find results -type f | sort -r | sed -n "${delete_num}p")
+            
+            echo -e "\n\033[1;31mAre you sure you want to delete $file_to_delete? (y/n):\033[0m "
+            read confirm
+            
+            if [[ $confirm == "y" || $confirm == "Y" ]]; then
+                rm "$file_to_delete"
+                echo -e "\033[1;32mFile deleted successfully.\033[0m"
+                sleep 2
+            fi
+        else
+            echo -e "\033[1;31mInvalid file number.\033[0m"
+            sleep 2
+        fi
+        
+        view_previous_results
+    elif [[ $file_choice == "C" || $file_choice == "c" ]]; then
+        # Compare two files
+        echo -e "\n\033[1;34mEnter the number of the first file:\033[0m "
+        read file1_num
+        
+        echo -e "\033[1;34mEnter the number of the second file:\033[0m "
+        read file2_num
+        
+        if [[ $file1_num =~ ^[0-9]+$ && $file1_num -le $file_count && $file2_num =~ ^[0-9]+$ && $file2_num -le $file_count ]]; then
+            file1=$(find results -type f | sort -r | sed -n "${file1_num}p")
+            file2=$(find results -type f | sort -r | sed -n "${file2_num}p")
+            
+            clear
+            echo -e "\033[1;34m=========================================\033[0m"
+            echo -e "\033[1;33m            Comparing Files              \033[0m"
+            echo -e "\033[1;34m=========================================\033[0m\n"
+            
+            echo -e "\033[1;34mComparing:\033[0m"
+            echo -e "\033[1;32m1: $file1\033[0m"
+            echo -e "\033[1;32m2: $file2\033[0m\n"
+            
+            # Use diff to compare files
+            diff --color=always -u "$file1" "$file2" | less -R
+        else
+            echo -e "\033[1;31mInvalid file number(s).\033[0m"
+            sleep 2
+        fi
+        
+        view_previous_results
+    else
+        echo -e "\033[1;31mInvalid choice.\033[0m"
+        sleep 2
+        view_previous_results
     fi
 }
 
+schedule_scan() {
+    clear
+    figlet -f slant "Schedule" | lolcat
+    echo -e "\n\033[1;34m=========================================\033[0m"
+    echo -e "\033[1;33m             Schedule Scan                \033[0m"
+    echo -e "\033[1;34m=========================================\033[0m\n"
+    
+    echo -e "\033[1;34mSchedule a scan to run automatically:\033[0m\n"
+    
+    echo -e "\033[1;34mEnter target IP or domain:\033[0m "
+    read schedule_target
+    
+    echo -e "\n\033[1;34mSelect scan type:\033[0m"
+    echo -e "\033[1;36m1)\033[0m \033[1;32mQuick Scan\033[0m"
+    echo -e "\033[1;36m2)\033[0m \033[1;32mFull Scan\033[0m"
+    echo -e "\033[1;36m3)\033[0m \033[1;32mVulnerability Scan\033[0m"
+    
+    echo -n -e "\033[1;34mEnter your choice: \033[0m"
+    read schedule_scan_type
+    
+    case $schedule_scan_type in
+        1)
+            scheduled_scan_cmd="nmap -T4 -F $schedule_target -oN results/scheduled_quick_\$(date +%Y%m%d_%H%M%S).txt"
+            ;;
+        2)
+            scheduled_scan_cmd="nmap -p- -A $schedule_target -oN results/scheduled_full_\$(date +%Y%m%d_%H%M%S).txt"
+            ;;
+        3)
+            scheduled_scan_cmd="nmap -sV --script vuln $schedule_target -oN results/scheduled_vuln_\$(date +%Y%m%d_%H%M%S).txt"
+            ;;
+        *)
+            echo -e "\033[1;31mInvalid choice! Using Quick Scan.\033[0m"
+            scheduled_scan_cmd="nmap -T4 -F $schedule_target -oN results/scheduled_quick_\$(date +%Y%m%
 
 # Function to run Gobuster scan
 run_gobuster() {
