@@ -637,8 +637,27 @@ schedule_scan() {
             ;;
         *)
             echo -e "\033[1;31mInvalid choice! Using Quick Scan.\033[0m"
-            scheduled_scan_cmd="nmap -T4 -F $schedule_target -oN results/scheduled_quick_\$(date +%Y%m%
-
+            scheduled_scan_cmd="nmap -T4 -F $schedule_target -oN results/scheduled_quick_\$(date +%Y%m%d_%H%M%S).txt"
+            ;;
+    esac
+    
+    echo -e "\n\033[1;34mEnter when to run the scan (format: HH:MM):\033[0m "
+    read schedule_time
+    
+    echo -e "\n\033[1;34mScheduling scan for $schedule_time...\033[0m"
+    
+    # Create results directory if it doesn't exist
+    mkdir -p results
+    
+    # Schedule the scan with at command
+    echo "$scheduled_scan_cmd" | at $schedule_time
+    
+    echo -e "\n\033[1;32mScan scheduled successfully!\033[0m"
+    echo -e "\033[1;33mResults will be saved in the results directory.\033[0m"
+    
+    echo -e "\n\033[1;34mPress any key to continue...\033[0m"
+    read -n 1
+}
 # Function to run Gobuster scan
 run_gobuster() {
     # Ask for target URL
